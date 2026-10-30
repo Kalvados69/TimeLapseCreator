@@ -59,16 +59,79 @@ namespace TimeLapseCreator
             }
         }
 
+        // La sortie est inscrite dans un cadre Full HD
+        public const int MaxOutputWidth = 1920;
+        public const int MaxOutputHeight = 1080;
+
+        public static CropRatio[] AvailableCropRatios { get; } =
+        {
+            new CropRatio("16/9", 16, 9),
+            new CropRatio("3/2", 3, 2),
+            new CropRatio("1/1", 1, 1),
+            new CropRatio("2/3", 2, 3),
+        };
+
+        private CropRatio _cropRatio = AvailableCropRatios[0];
+        public CropRatio CropRatio
+        {
+            get { return _cropRatio; }
+            set
+            {
+                if (this._cropRatio != value)
+                {
+                    this._cropRatio = value;
+                    this.FirePropertyChanged("CropRatio");
+                    this.FirePropertyChanged("OutputWidth");
+                    this.FirePropertyChanged("OutputHeight");
+                    this.FirePropertyChanged("OutputResolution");
+                }
+            }
+        }
+
+        public int OutputWidth
+        {
+            get
+            {
+                if (CropRatio.Horizontal * MaxOutputHeight >= CropRatio.Vertical * MaxOutputWidth) return MaxOutputWidth;
+
+                return RoundToEven((double)MaxOutputHeight * CropRatio.Horizontal / CropRatio.Vertical);
+            }
+        }
+
+        public int OutputHeight
+        {
+            get
+            {
+                if (CropRatio.Horizontal * MaxOutputHeight < CropRatio.Vertical * MaxOutputWidth) return MaxOutputHeight;
+
+                return RoundToEven((double)MaxOutputWidth * CropRatio.Vertical / CropRatio.Horizontal);
+            }
+        }
+
+        public string OutputResolution
+        {
+            get { return $"{OutputWidth} x {OutputHeight}"; }
+        }
+
+        // H.264 en yuv420p impose des dimensions paires
+        private static int RoundToEven(double value)
+        {
+            return (int)Math.Round(value / 2) * 2;
+        }
+
         public FileInfo[] SourceImages
         {
             get
             {
                 if (string.IsNullOrEmpty(SourcePath)) return null;
 
+                var exts = new[] { ".jpg", ".jpeg" };
                 DirectoryInfo sourcePathDirectory = new DirectoryInfo(SourcePath);
-                FileInfo[] images = sourcePathDirectory.GetFiles("*.JPG", SearchOption.TopDirectoryOnly); //*.jpg,*.jpeg,*.JPG,*.JPEG
-                images.OrderBy(fi => fi.CreationTime);
-                return images;
+                return sourcePathDirectory
+                        .EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
+                        .Where(file => exts.Any(x => file.Extension.Equals(x, StringComparison.OrdinalIgnoreCase)))
+                        .OrderBy(file => file.Name, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
             }
         }
 
