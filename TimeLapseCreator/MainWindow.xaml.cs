@@ -227,7 +227,7 @@ namespace TimeLapseCreator
                     using (Bitmap image = new Bitmap(images[i].FullName))
                     {
                         // create new video file
-                        if (!writer.IsOpen) writer.Open(System.IO.Path.Combine(sourcePathDirectory.FullName, "EasyTimelapse.mp4"), image.Width, image.Height, bw_timelapse.Framerate, VideoCodec.MPEG4, 50000000);
+                        if (!writer.IsOpen) writer.Open(System.IO.Path.Combine(sourcePathDirectory.FullName, $"{sourcePathDirectory.Name} - Timelapse.mp4"), image.Width, image.Height, bw_timelapse.Framerate, VideoCodec.MPEG4, 50000000);
 
                         writer.WriteVideoFrame(image);
                     }
